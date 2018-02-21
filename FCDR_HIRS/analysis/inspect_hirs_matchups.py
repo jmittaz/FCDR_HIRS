@@ -71,8 +71,8 @@ def parse_cmdline():
 
 class HIRSMatchupInspector(matchups.HIRSMatchupCombiner):
     def plot_channel(self, ch):#, prim="n17", sec="n16"):
-        prim = self.prim
-        sec = self.sec
+        prim = self.prim_name
+        sec = self.sec_name
         xlab = "HIRS {prim:s}".format(prim=prim.upper())
         ylab = "HIRS {sec:s}".format(sec=sec.upper())
         Δylab = "HIRS {prim:s}-{sec:s}".format(prim=prim.upper(),
