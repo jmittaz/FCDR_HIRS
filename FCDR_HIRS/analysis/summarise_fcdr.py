@@ -2,6 +2,7 @@
 """
 
 import matplotlib
+import math
 from .. import common
 import argparse
 
@@ -68,7 +69,10 @@ def parse_cmdline():
     parser.add_argument("--version", action="store", type=str,
         default="0.8pre",
         help="Version to use.")
-#            "or plot from them")
+
+    parser.add_argument("--format-version", action="store", type=str,
+        default="0.7",
+        help="Format version to use.")
 
     parser.add_argument("--ptiles", action="store", type=int,
         nargs="*",
@@ -85,12 +89,14 @@ def parse_cmdline():
 class FCDRSummary(HomemadeDataset):
     name = section = "fcdr_hirs_summary"
 
-    stored_name = ("fcdr_hirs_summary_{satname:s}_v{fcdr_version:s}_{fcdr_type:s}_"
+    stored_name = ("fcdr_hirs_summary_{satname:s}_v{fcdr_version:s}_"
+        "fv{format_version:s}_{fcdr_type:s}_"
         "{year:04d}{month:02d}{day:02d}_"
         "{year_end:04d}{month_end:02d}{day_end:02d}.nc")
 
     re = (r"fcdr_hirs_summary_(?P<satname>.{6})_"
           r"(?P<data_version>.+)_"
+          r"(?P<format_version>.+)_"
           r"(?P<fcdr_type>.+)_"
           r'(?P<year>\d{4})(?P<month>\d{2})(?P<day>\d{2})_'
           r'(?P<year_end>\d{4})(?P<month_end>\d{2})(?P<day_end>\d{2})\.nc')
@@ -100,23 +106,24 @@ class FCDRSummary(HomemadeDataset):
     hirs = None
 
     ptiles = numpy.linspace(0, 100, 101, dtype="u1")
-    data_version = "0.4"
+    data_version = "0.8"
+    format_version = "0.7"
     time_field = "date"
     read_returns = "xarray"
     plot_file = ("hirs_summary/"
         "FCDR_hirs_summary_{satname:s}_ch{channel:d}_{start:%Y%m%d}-{end:%Y%m%d}_p{ptilestr:s}"
-        "v{data_version:s}.")
+        "v{data_version:s}_fv{format_version:s}.")
     plot_hist_file = ("hirs_summary/"
         "FCDR_hirs_hist_{satname:s}_{start:%Y%m%d}-{end:%Y%m%d}"
-        "v{data_version:s}.")
+        "v{data_version:s}_fv{format_version:s}.")
 
     fields = {
         "debug":
-            ["T_b", "u_T_b_random", "u_T_b_nonrandom",
-            "R_e", "u_R_Earth_random", "u_R_Earth_nonrandom",
+            ["T_b", "u_T_b_random", "u_T_b_nonrandom", "u_T_b_harm",
+            "R_e", "u_R_Earth_random", "u_R_Earth_nonrandom", "u_R_Earth_harm",
             "u_C_Earth"],
         "easy":
-            ["bt", "u_independent", "u_structured"],
+            ["bt", "u_independent", "u_structured", "u_common"],
           }
     
     # extra fields needed in analysis but not summarised
@@ -132,11 +139,12 @@ class FCDRSummary(HomemadeDataset):
         {
         **{field: (("edges",), [170, 320]) for field in ("T_b", "bt")},
         **{field: (("edges",), [0, 50]) for field in 
-            ["u_T_b_random", "u_T_b_nonrandom",
-             "u_independent", "u_structured"]},
+            ["u_T_b_random", "u_T_b_nonrandom", "u_T_b_harm",
+             "u_independent", "u_structured", "u_common"]},
         **{field: (("channel", "edges"),
                    [[0, 200]]*10+[[0, 100]]*2+[[0,10]]*7)
-            for field in ("R_e", "u_R_Earth_random", "u_R_Earth_nonrandom")},
+            for field in ("R_e", "u_R_Earth_random",
+                          "u_R_Earth_nonrandom", "u_R_Earth_harm")},
         "u_C_Earth": (("edges",), [-4097, 4098]),
         },
         coords={"channel": numpy.arange(1, 20)})
@@ -212,6 +220,7 @@ class FCDRSummary(HomemadeDataset):
             try:
                 ds = self.hirs.read_period(sd, ed,
                     locator_args={"data_version": self.data_version,
+                                  "format_version": self.format_version,
                                   "fcdr_type": fcdr_type},
                     fields=fields[fcdr_type]+self.extra_fields[fcdr_type])
                 if fcdr_type=="easy" and ds["u_structured"].dims == ():
@@ -275,6 +284,7 @@ class FCDRSummary(HomemadeDataset):
             month_end=dates[-2].month,
             day_end=dates[-2].day,
             fcdr_version=self.data_version,
+            format_version=self.format_version,
             fcdr_type=fcdr_type))
         of.parent.mkdir(parents=True, exist_ok=True)
 
@@ -333,6 +343,7 @@ class FCDRSummary(HomemadeDataset):
             try:
                 summary = self.read_period(start, end,
                     locator_args={"data_version": "v"+self.data_version,
+                        "format_version": "fv" + self.format_version,
                         "fcdr_type": fcdr_type,
                         "satname": sat},
                     NO_CACHE=True)
@@ -345,8 +356,7 @@ class FCDRSummary(HomemadeDataset):
             
             np = len(ptiles)
             if len(sats) == 1:
-                pcolors = [f"C{i:d}" for i in
-                    range(math.ceil(-np/2), math.ceil(np/2))]
+                pcolors = [f"C{i:d}" for i in range(np)]
             else:
                 pcolors = [f"C{allsats.index(sat)%10:d}"]*np
 
@@ -406,8 +416,9 @@ class FCDRSummary(HomemadeDataset):
         for channel in range(1, 20):
             (f, a_all) = figs[channel]
             pyatmlab.graphics.print_or_show(f, None, 
-                self.plot_file.format(satname=satlabel, start=start,
+                self.plot_file.format(satname=self.satname, start=start,
                 end=end, channel=channel, data_version=self.data_version,
+                format_version=self.format_version,
                 ptilestr=','.join(str(p) for p in ptiles)))
         # another set with zoomed-in y-axes
         for channel in range(1, 20):
@@ -417,9 +428,10 @@ class FCDRSummary(HomemadeDataset):
                 hi = ranges.loc[{"channel": channel, "field": fld, "extremum": "hi"}].max()
                 a.set_ylim([lo, hi])
             pyatmlab.graphics.print_or_show(f, None, 
-                self.plot_file.format(satname=satlabel, start=start,
+                self.plot_file.format(satname=self.satname, start=start,
                     end=end, channel=channel,
                     data_version=self.data_version,
+                    format_version=self.format_version,
                     ptilestr=','.join(str(p) for p in ptiles))[:-1] + "_zoom.")
         self.satname = oldsatname
 
@@ -429,6 +441,7 @@ class FCDRSummary(HomemadeDataset):
             nrows=2, ncols=2, squeeze=False)
         summary = self.read_period(start, end,
             locator_args={"data_version": "v"+self.data_version,
+                "format_version": "fv" + self.format_version,
                 "fcdr_type": fcdr_type})
         
         tit = f"HIRS {self.satname:s} {start:%Y-%m-%d}--{end:%Y-%m-%d}"
@@ -436,9 +449,11 @@ class FCDRSummary(HomemadeDataset):
         if fcdr_type == "easy":
             lab_struc = "structured"
             lab_indy = "independent"
+            lab_comm = "common"
         else:
             lab_struc = "T_b_nonrandom"
             lab_indy = "T_b_random"
+            lab_comm = "T_b_harm"
         # The dynamic range of structured uncertainties varies a lot
         # between channels.  Plotting together channels with large
         # differences in dynamic range of structured uncertainty may lead
@@ -465,6 +480,9 @@ class FCDRSummary(HomemadeDataset):
                 y = summary[f"hist_u_{lab_struc:s}"].sel(channel=ch).sum("date")
                 a.plot(x, y, label=f"Ch. {ch:d}, {lab_struc:s}",
                     color=f"C{k:d}", linestyle="-")
+                y = summary[f"hist_u_{lab_comm:s}"].sel(channel=ch).sum("date")
+                a.plot(x, y, label=f"Ch. {ch:d}, {lab_comm:s}",
+                    color=f"C{k:d}", linestyle=":")
             a.legend()
             a.set_xlim([0,
                 float(summary[f"bins_u_{lab_struc:s}"].sel(channel=chs[0]).isel(bin_edges=idx_hi))])
@@ -473,7 +491,8 @@ class FCDRSummary(HomemadeDataset):
         f.suptitle(tit)
         pyatmlab.graphics.print_or_show(f, None, 
             self.plot_hist_file.format(satname=self.satname, start=start,
-            end=end, data_version=self.data_version))
+            end=end, data_version=self.data_version,
+            format_version=self.format_version))
 
 def summarise():
     p = parse_cmdline()
@@ -482,7 +501,8 @@ def summarise():
         filename=p.log)
 #    if p.mode != "summarise":
 #        raise NotImplementedError("Only summarising implemented yet")
-    summary = FCDRSummary(satname=p.satname, data_version=p.version)
+    summary = FCDRSummary(satname=p.satname, data_version=p.version,
+        format_version=p.format_version)
     start = datetime.datetime.strptime(p.from_date, p.datefmt)
     end = datetime.datetime.strptime(p.to_date, p.datefmt)
     if p.mode == "summarise":
@@ -496,7 +516,7 @@ def summarise():
 #            fields=["bt", "u_independent", "u_structured"],
 #            fcdr_type="easy")
         summary.plot_period_ptiles(start, end,
-            fields=["bt", "u_independent", "u_structured"],
+            fields=["bt", "u_independent", "u_structured", "u_common"],
             fcdr_type="easy",
             ptiles=p.ptiles,
             pstyles=p.pstyles.split())
