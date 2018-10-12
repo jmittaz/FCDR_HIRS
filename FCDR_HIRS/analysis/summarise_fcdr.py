@@ -318,10 +318,10 @@ class FCDRSummary(HomemadeDataset):
         allsats = fcdr.list_all_satellites_chronologically()
         if sats == "all":
             sats = allsats
-            satlabel = ""
+            satlabel = "all"
         else:
             sats = [sats]
-            satlabel = self.satname + " "
+            satlabel = self.satname
         
         figs = {}
         for channel in range(1, 20):
@@ -361,7 +361,7 @@ class FCDRSummary(HomemadeDataset):
                 pcolors = [f"C{allsats.index(sat)%10:d}"]*np
 
             for channel in range(1, 20):
-                total_title = (f"HIRS {satlabel:s}ch. {channel:d} "
+                total_title = (f"HIRS {satlabel:s} ch. {channel:d} "
                                f"{start:%Y-%m-%d}--{end:%Y-%m-%d}")
                 (f, a_all) = figs[channel]
                 for (i, (fld, a)) in enumerate(zip(fields, a_all.ravel())):
@@ -416,7 +416,7 @@ class FCDRSummary(HomemadeDataset):
         for channel in range(1, 20):
             (f, a_all) = figs[channel]
             pyatmlab.graphics.print_or_show(f, None, 
-                self.plot_file.format(satname=self.satname, start=start,
+                self.plot_file.format(satname=satlabel, start=start,
                 end=end, channel=channel, data_version=self.data_version,
                 format_version=self.format_version,
                 ptilestr=','.join(str(p) for p in ptiles)))
@@ -428,7 +428,7 @@ class FCDRSummary(HomemadeDataset):
                 hi = ranges.loc[{"channel": channel, "field": fld, "extremum": "hi"}].max()
                 a.set_ylim([lo, hi])
             pyatmlab.graphics.print_or_show(f, None, 
-                self.plot_file.format(satname=self.satname, start=start,
+                self.plot_file.format(satname=satlabel, start=start,
                     end=end, channel=channel,
                     data_version=self.data_version,
                     format_version=self.format_version,
