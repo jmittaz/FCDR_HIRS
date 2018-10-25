@@ -26,7 +26,21 @@ regression_types = {
     "PLSR": sklearn.cross_decomposition.PLSRegression,
     "LR": sklearn.linear_model.LinearRegression}
 
-class RSelf:
+class RSelf(metaclass=abc.ABCMeta):
+    @abc.abstractmethod
+    def fit(self, context, ch):
+        ...
+
+
+    @abc.abstractmethod
+    def test(self, context, ch):
+        ...
+
+    @abc.abstractmethod
+    def evaluate(self, lines, ch):
+        ...
+
+class RSelfTemperature(Rself):
     # default set of temperatures: all that consistently exist across
     # series
     #
