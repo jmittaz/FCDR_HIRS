@@ -201,7 +201,10 @@ hh = typhon.datasets.tovs.HIRSHIRS(read_returns="xarray")
 hi = typhon.datasets.tovs.HIASI(read_returns="xarray") # metopa only
 
 class HIRSMatchupCombiner:
-    fcdr_info = {"data_version": "0.8pre", "fcdr_type": "debug"}
+    fcdr_info = {
+        "data_version": "0.8pre2_no_harm",
+        "format_version": "2.0.0",
+        "fcdr_type": "debug"}
     fields_from_each = [
          'B',
          'C_E',
