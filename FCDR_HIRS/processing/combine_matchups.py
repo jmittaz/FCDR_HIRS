@@ -75,6 +75,7 @@ tl = dict(C_E="C_Earth",
 
 import logging
 
+import traceback
 import itertools
 import datetime
 import warnings
@@ -741,6 +742,7 @@ def combine_hirs():
             except FileNotFoundError as e:
                 print(f"Unable to filter for channel {channel:d}: {e.args!s}",
                         file=sys.stderr)
+                traceback.print_exc()
                 continue
             anygood = True
             hmc.write_harm(harm, ds_new, basedir=tmpdir)
