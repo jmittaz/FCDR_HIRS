@@ -58,6 +58,13 @@ def parse_cmdline_merge():
         description="Merge multiple harmonisation files",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
+    parser = common.add_to_argparse(parser,
+        include_period=False,
+        include_sat=0,
+        include_channels=False,
+        include_temperatures=False,
+        include_debug=False)
+
     parser.add_argument("files", type=str, nargs="+",
         help="Files to concatenate")
 
