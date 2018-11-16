@@ -106,6 +106,7 @@ setup(
                       "fcdr-tools>=1.1.4",
                       "joblib>=0.11",
                       "pyorbital",
+                      "isodate",
                       "cartopy"],
 
     # List additional groups of dependencies here (e.g. development
