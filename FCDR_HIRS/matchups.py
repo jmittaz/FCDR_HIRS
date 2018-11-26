@@ -201,10 +201,9 @@ hh = typhon.datasets.tovs.HIRSHIRS(read_returns="xarray")
 hi = typhon.datasets.tovs.HIASI(read_returns="xarray") # metopa only
 
 class HIRSMatchupCombiner:
-    fcdr_info = {
-        "data_version": "0.8pre2_no_harm",
-        "format_version": "2.0.0",
-        "fcdr_type": "debug"}
+    hirs_data_version = "0.8pre2_no_harm"
+    hirs_format_version = "2.0.0"
+
     fields_from_each = [
 #         'B',
          'C_E',
@@ -315,7 +314,9 @@ class HIRSMatchupCombiner:
     msd_field = "matchup_spherical_distance" # default
 
     mode = None
-    def __init__(self, start_date, end_date, prim_name, sec_name):
+    def __init__(self, start_date, end_date, prim_name, sec_name,
+            hirs_data_version=None,
+            hirs_format_version=None):
         #self.ds = netCDF4.Dataset(str(sf), "r")
         # acquire original brightness temperatures here for the purposes
         # of estimating Kr.  Of course this should come from my own
@@ -373,6 +374,10 @@ class HIRSMatchupCombiner:
             self.sec_hirs, trans={"time_{:s}".format(sec_name): "time"},
             col_field="hirs-{:s}_x".format(sec_name),
             time_name="time_"+sec_name)
+        fcdr_info = {
+            "data_version": hirs_data_version or self.hirs_data_version,
+            "format_version": hirs_format_version or self.hirs_format_version,
+            "fcdr_type": "debug"}
         if self.mode == "reference":
             # There is no Mcp, for the primary (reference) is IASI
             Mcp = None
@@ -380,19 +385,19 @@ class HIRSMatchupCombiner:
                 self.sec_hirs,
                 trans={"mon_time": "time"},
                 timetol=numpy.timedelta64(4, 's'),
-                other_args={"locator_args": self.fcdr_info,
+                other_args={"locator_args": fcdr_info,
                             "fields": self.fields_from_each}).drop(
                     ("lat_earth", "lon_earth"))
         elif self.mode == "hirs":
             try:
                 Mcp = prim_comb(
-                    other_args={"locator_args": self.fcdr_info,
+                    other_args={"locator_args": fcdr_info,
                                 "fields": self.fields_from_each,
                                 "orbit_filters": [CalibrationCountDimensionReducer()],
                                 "NO_CACHE": True}).drop(
                         ("lat_earth", "lon_earth"))
                 Mcs = sec_comb(
-                    other_args={"locator_args": self.fcdr_info,
+                    other_args={"locator_args": fcdr_info,
                                 "orbit_filters": [CalibrationCountDimensionReducer()],
                                 "fields": self.fields_from_each}).drop(
                         ("lat_earth", "lon_earth"))
