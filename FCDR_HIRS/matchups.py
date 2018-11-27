@@ -316,7 +316,9 @@ class HIRSMatchupCombiner:
     mode = None
     def __init__(self, start_date, end_date, prim_name, sec_name,
             hirs_data_version=None,
-            hirs_format_version=None):
+            hirs_format_version=None,
+            extra_data_versions=None,
+            extra_format_versions=None):
         #self.ds = netCDF4.Dataset(str(sf), "r")
         # acquire original brightness temperatures here for the purposes
         # of estimating Kr.  Of course this should come from my own
