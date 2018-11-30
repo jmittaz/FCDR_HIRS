@@ -75,6 +75,9 @@ Convert HIRS-IASI matchups for harmonisation
         nargs="*", default=[],
         help="Extra fields from HIRS to add to the matchups")
 
+    group = parser.add_mutually_exclusive_group(required=True)
+    group.add_argument('--with-filters', action='store_true')
+    group.add_argument('--without-filters', action='store_false')
 
     return parser.parse_args()
 
@@ -848,6 +851,8 @@ def combine_hirs():
 
 def combine_iasi():
     p = parse_cmdline_iasi()
+    if p.with_filters:
+        sys.exit("IASI-HIRS filtering not implemented yet")
     common.set_logger(
         logging.DEBUG if p.verbose else logging.INFO,
         p.log,
