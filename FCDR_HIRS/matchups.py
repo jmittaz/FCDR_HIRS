@@ -320,6 +320,8 @@ class HIRSMatchupCombiner:
             extra_data_versions=None,
             extra_format_versions=None,
             extra_fields=None):
+        if extra_data_versions is not None:
+            raise NotImplementedError("no extra data versions implemented")
         #self.ds = netCDF4.Dataset(str(sf), "r")
         # acquire original brightness temperatures here for the purposes
         # of estimating Kr.  Of course this should come from my own
@@ -437,7 +439,7 @@ class HIRSMatchupCombiner:
         self.Mcs = Mcs
         self.prim_name = prim_name
         self.sec_name = sec_name
-        self.extras = extras
+        self.extras = {} # not implemented
 
 
 class KModel(metaclass=abc.ABCMeta):
