@@ -67,6 +67,15 @@ Convert HIRS-IASI matchups for harmonisation
         include_channels=False,
         include_temperatures=False)
 
+    parser.add_argument("--hirs-src-version", action="store", type=str,
+        default="0.8pre2_no_harm",
+        help="HIRS source version to use for matchup enhancement")
+
+    parser.add_argument("--hirs-extra-fields", action="store", type=str,
+        nargs="*", default=[],
+        help="Extra fields from HIRS to add to the matchups")
+
+
     return parser.parse_args()
 
 def parse_cmdline_merge():
@@ -849,7 +858,9 @@ def combine_iasi():
     hmc = HIRSMatchupCombiner(
         datetime.datetime.strptime(p.from_date, p.datefmt),
         datetime.datetime.strptime(p.to_date, p.datefmt),
-        "iasi", "metopa")
+        "iasi", "metopa",
+        hirs_data_version=p.hirs_src_version,
+        extra_fields=p.hirs_extra_fields)
 
     ds = hmc.as_xarray_dataset()
     for channel in range(1, 20):
