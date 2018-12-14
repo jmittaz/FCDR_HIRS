@@ -50,7 +50,7 @@ def parse_cmdline():
     return parser.parse_args()
 
 def plot_hist_with_medmad_and_fitted_normal(a, y, rge, xlab, ylab, tit,
-        write=False, max_ratcorr=0.02, rge_fact=0.1, max_tries=10):
+        write=False, max_ratcorr=0.02, rge_fact=0.1, max_tries=30):
     """Plot data histogram along with a fitted normal distribution
 
     Plot a histogram of `y` into axes `a`, using xrange `rge`, xlabel
@@ -116,13 +116,13 @@ def plot_hist_with_medmad_and_fitted_normal(a, y, rge, xlab, ylab, tit,
         ratcorr = numpy.where(dens==0, 0, ratcorr)
         #if ratcorr[0] > max_ratcorr and dens[0]>0:
         if dens[0]>0:
-            logger.debug(f"Extending lower range for {write:s} as "
-                f"{ratcorr[0]:.5f}>{max_ratcorr:.3f} at {rge[0]:.5f}")
+            logger.debug(f"Extending lower range for {write:s} beyond "
+                f"{ratcorr[0]:10.3e} at {rge[0]:.5f}")
             rge[0] -= rge.ptp()*rge_fact
         #elif ratcorr[-1] > max_ratcorr and dens[-1]>0:
         elif dens[-1]>0:
-            logger.debug(f"Extending upper range for {write:s} as "
-                f"{ratcorr[-1]:.5f}>{max_ratcorr:.3f} at {rge[-1]:.5f}")
+            logger.debug(f"Extending upper range for {write:s} beyond "
+                f"{ratcorr[-1]:10.3e} at {rge[-1]:.5f}")
             rge[-1] += rge.ptp()*rge_fact
         else:
             break
